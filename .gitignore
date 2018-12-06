@@ -1,0 +1,9 @@
+.DS*
+*.log
+.idea
+node_modules
+coverage
+build
+.vscode
+.npmrc
+package-lock.json

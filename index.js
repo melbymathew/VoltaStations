@@ -8,6 +8,7 @@ const stations = [
     id: 'f9831517-e87d-427c-a86e-4b0fcd2d55b7',
     lin: '001-0001-001-01',
     name: 'Pearlridge Center 01',
+    status: 'active',
   },
   {
     id: 'f9831517-e87d-427c-a86e-4b0fcd2d55b7',
@@ -20,18 +21,65 @@ const stations = [
 // which ways the data can be fetched from the GraphQL server.
 const typeDefs = gql`
   # Comments in GraphQL are defined with the hash (#) symbol.
+  scalar GraphQLDate
 
+  enum Type {
+    Point
+  }
+  enum Status {
+    under construction
+    active
+    needs service
+  }
+  enum SortDir {
+    asc
+    desc
+  }
+  type Location {
+    type: Type
+    coordinates: [Float]
+  }
+  type Meter {
+    id: String
+    oem: String
+    station_id: String
+    state: String
+  }
   # This "Station" type can be used in other type declarations.
   type Station {
     id: String
     lin: String
     name: String
+    status: Status
+    location: Location
+    street_address: String
+    city: String
+    state: String
+    zip_code: String
+    pay_to_park: Boolean
+    completion_date: GraphQLDate
+    meters: [Meter]
+    public: Boolean
+  }
+
+  input StationFilter {
+    search_term: String
+    available: String
+    top: Float
+    left: Float
+    bottom: Float
+    right: Float
+    status: Status
+    limit: Int
+    offset: Int
+    order_by: String
+    sort_dir: SortDir
   }
 
   # The "Query" type is the root of all GraphQL queries.
   # (A "Mutation" type will be covered later on.)
   type Query {
-    stations: [Station]
+    stations(stationFilter: StationFilter): [Station]
   }
 `;
 
@@ -39,7 +87,7 @@ const typeDefs = gql`
 // schema.  We'll retrieve books from the "stations" array above.
 const resolvers = {
   Query: {
-    stations: () => stations,
+    stations: (stationFilter) => stations,
   },
 };
 
