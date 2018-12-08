@@ -1,21 +1,58 @@
 const { ApolloServer, gql } = require('apollo-server');
+const axios = require('axios');
 
-// This is a (sample) collection of stations we'll be able to query
-// the GraphQL server for.  A more complete example might fetch
-// from an existing data source like a REST API or database.
-const stations = [
-  {
-    id: 'f9831517-e87d-427c-a86e-4b0fcd2d55b7',
-    lin: '001-0001-001-01',
-    name: 'Pearlridge Center 01',
-    status: 'active',
-  },
-  {
-    id: 'f9831517-e87d-427c-a86e-4b0fcd2d55b7',
-    lin: '001-0001-001-01',
-    name: 'Pearlridge Center 01',
-  },
-];
+const getStations = async (args) => {
+  try {
+    const baseUrl = 'https://api.voltaapi.com/v1/stations';
+    let fullUrl = baseUrl;
+    if(args.stationFilter) {
+      fullUrl += getFilterQueryString(args.stationFilter);
+    }
+    console.log(fullUrl);
+    return await axios.get(encodeURI(fullUrl));
+  } catch (error) {
+    console.error(error)
+  }
+};
+
+const getFilterQueryString = ({ search_term, available, top, left, bottom, right, status, limit, offset, order_by, sort_dir }) => {
+  let filterPart = '?'
+  if(search_term) {
+    filterPart += 's=' + search_term + '&'
+  }
+  if(available) {
+    filterPart += 'available=' + available + '&'
+  }
+  if(top) {
+    filterPart += 'top=' + top + '&'
+  }
+  if(left) {
+    filterPart += 'left=' + left + '&'
+  }
+  if(bottom) {
+    filterPart += 'bottom=' + bottom + '&'
+  }
+  if(right) {
+    filterPart += 'right=' + right + '&'
+  }
+  if(status) {
+    filterPart += 'status=' + status + '&'
+  }
+  if(limit) {
+    filterPart += 'limit=' + limit + '&'
+  }
+  if(offset) {
+    filterPart += 'offset=' + offset + '&'
+  }
+  if(order_by) {
+    filterPart += 'orderby=' + order_by + '&'
+  }
+  if(sort_dir) {
+    filterPart += 'sortdir=' + sort_dir + '&'
+  }
+
+  return filterPart;
+};
 
 // Type definitions define the "shape" of your data and specify
 // which ways the data can be fetched from the GraphQL server.
@@ -27,9 +64,10 @@ const typeDefs = gql`
     Point
   }
   enum Status {
-    under construction
-    active
-    needs service
+    uc
+    a
+    ns
+    d
   }
   enum SortDir {
     asc
@@ -50,7 +88,7 @@ const typeDefs = gql`
     id: String
     lin: String
     name: String
-    status: Status
+    status: String
     location: Location
     street_address: String
     city: String
@@ -87,7 +125,11 @@ const typeDefs = gql`
 // schema.  We'll retrieve books from the "stations" array above.
 const resolvers = {
   Query: {
-    stations: (stationFilter) => stations,
+    stations: async (obj, args, context) => {
+      const resp = await getStations(args);
+      return resp.data;
+    }
+
   },
 };
 
